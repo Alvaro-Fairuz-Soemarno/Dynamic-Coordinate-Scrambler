@@ -6,7 +6,7 @@ $listener.Start()
 
 Write-Host "PowerShell API Server running on http://localhost:$port/" -ForegroundColor Green
 
-# SQL Server Configuration (Modify to match your local setup)
+# SQL Server Configuration 
 $ServerName = "localhost\SQLEXPRESS"
 $DatabaseName = "Coordinate_Registry"
 $ConnectionString = "Server=$ServerName;Database=$DatabaseName;Integrated Security=True;"
@@ -16,28 +16,26 @@ while ($listener.IsListening) {
     $request = $context.Request
     $response = $context.Response
 
-    # Inject CORS headers so your browser HTML file can communicate across local ports safely
+    # Inject CORS headers so file can communicate across local ports safely
     $response.Headers.Add("Access-Control-Allow-Origin", "*")
     $response.Headers.Add("Access-Control-Allow-Headers", "Content-Type")
     $response.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS")
 
-    # Handle preflight OPTIONS requests gracefully
+    # Handle preflight OPTIONS requests
     if ($request.HttpMethod -eq "OPTIONS") {
         $response.StatusCode = 200
         $response.Close()
         continue
     }
 
-    # =========================================================================
     # ENDPOINT 1: FETCH ORIGINAL COORDINATES (/get-coordinates)
-    # =========================================================================
     if ($request.HttpMethod -eq "POST" -and $request.Url.LocalPath -eq "/get-coordinates") {
         $reader = New-Object System.IO.StreamReader($request.InputStream, [System.Text.Encoding]::UTF8)
         $body = $reader.ReadToEnd()
         $dataInput = ConvertFrom-Json $body
         $targetAddress = $dataInput.address
 
-     # DIAGNOSTIC LOG 1: What is PowerShell receiving from your web browser?
+     # DIAGNOSTIC LOG 1: What is PowerShell receiving from web browser?
         Write-Host "`n=== INCOMING REQUEST DEBUG ===" -ForegroundColor Cyan
         Write-Host "Received Address String: '$targetAddress'" -ForegroundColor Yellow
         Write-Host "Total Character Length : $($targetAddress.Length)" -ForegroundColor Yellow
@@ -71,8 +69,8 @@ while ($listener.IsListening) {
                 Write-Host "SQL Exact Match Failed. Running dynamic database search fallback..." -ForegroundColor Red
                 $SqlReader.Close()
 
-                # 🛑 DIAGNOSTIC LOG 2: Dynamically split the query into pieces to see what's in the DB
-                # Grabs the first distinct word or number from your input (e.g., '112' or 'Mercer')
+                # DIAGNOSTIC LOG 2: Dynamically split the query into pieces to see what's in the DB
+                # Grabs the first distinct word or number from input (e.g., '112' or 'Mercer')
                 $searchKeywords = $targetAddress.Split(@(' ', ','), [System.StringSplitOptions]::RemoveEmptyEntries)
                 $firstKeyword = if ($searchKeywords.Count -gt 0) { $searchKeywords[0] } else { "" }
                 
@@ -116,9 +114,7 @@ while ($listener.IsListening) {
     }
 
 
-    # =========================================================================
     # ENDPOINT 2: CHECK FOR DUPLICATE TRIPLET (/check-duplicate-triplet)
-    # =========================================================================
     elseif ($request.HttpMethod -eq "POST" -and $request.Url.LocalPath -eq "/check-duplicate-triplet") {
         $reader = New-Object System.IO.StreamReader($request.InputStream)
         $body = $reader.ReadToEnd()
@@ -149,9 +145,7 @@ while ($listener.IsListening) {
         $response.OutputStream.Write($responseBytes, 0, $responseBytes.Length)
     }
     
-    # =========================================================================
     # FALLBACK: ROUTE NOT FOUND (404)
-    # =========================================================================
     else {
         $response.StatusCode = 404
     }

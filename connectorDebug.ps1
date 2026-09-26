@@ -16,7 +16,7 @@ while ($listener.IsListening) {
     $request = $context.Request
     $response = $context.Response
 
-    # Inject CORS headers so HTML file can communicate across local ports safely
+    # Inject CORS headers so file can communicate across local ports safely
     $response.Headers.Add("Access-Control-Allow-Origin", "*")
     $response.Headers.Add("Access-Control-Allow-Headers", "Content-Type")
     $response.Headers.Add("Access-Control-Allow-Methods", "POST, OPTIONS")
@@ -28,9 +28,7 @@ while ($listener.IsListening) {
         continue
     }
 
-    # =========================================================================
     # ENDPOINT 1: FETCH ORIGINAL COORDINATES (/get-coordinates)
-    # =========================================================================
     if ($request.HttpMethod -eq "POST" -and $request.Url.LocalPath -eq "/get-coordinates") {
         $reader = New-Object System.IO.StreamReader($request.InputStream, [System.Text.Encoding]::UTF8)
         $body = $reader.ReadToEnd()
@@ -117,9 +115,7 @@ while ($listener.IsListening) {
     }
 
 
-    # =========================================================================
     # ENDPOINT 2: CHECK FOR DUPLICATE TRIPLET (/check-duplicate-triplet)
-    # =========================================================================
     elseif ($request.HttpMethod -eq "POST" -and $request.Url.LocalPath -eq "/check-duplicate-triplet") {
         $reader = New-Object System.IO.StreamReader($request.InputStream)
         $body = $reader.ReadToEnd()
@@ -150,9 +146,7 @@ while ($listener.IsListening) {
         $response.OutputStream.Write($responseBytes, 0, $responseBytes.Length)
     }
     
-    # =========================================================================
     # FALLBACK: ROUTE NOT FOUND (404)
-    # =========================================================================
     else {
         $response.StatusCode = 404
     }
